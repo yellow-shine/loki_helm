@@ -414,6 +414,7 @@ swift:
   connect_timeout: {{ .connect_timeout | default "10s" }}
   request_timeout: {{ .request_timeout | default "5s" }}
 {{- end -}}
+
 {{- else }}
 type: "local"
 {{- end -}}
@@ -422,8 +423,10 @@ type: "local"
 {{/* Loki ruler config */}}
 {{- define "loki.rulerConfig" }}
 ruler:
+  {{- if not .Values.loki.storage.use_thanos_objstore }}
   storage:
     {{- include "loki.rulerStorageConfig" . | nindent 4}}
+  {{- end }}
 {{- if (not (empty .Values.loki.rulerConfig)) }}
 {{- toYaml .Values.loki.rulerConfig | nindent 2}}
 {{- end }}
@@ -693,7 +696,7 @@ Create the service endpoint including port for MinIO.
 
 {{/* Determine if deployment is using object storage */}}
 {{- define "loki.isUsingObjectStorage" -}}
-{{- or (eq .Values.loki.storage.type "gcs") (eq .Values.loki.storage.type "s3") (eq .Values.loki.storage.type "azure") (eq .Values.loki.storage.type "swift") (eq .Values.loki.storage.type "alibabacloud") -}}
+{{- or (eq .Values.loki.storage.type "gcs") (eq .Values.loki.storage.type "s3") (eq .Values.loki.storage.type "azure") (eq .Values.loki.storage.type "swift") (eq .Values.loki.storage.type "alibabacloud") (eq .Values.loki.storage.type "cos") -}}
 {{- end -}}
 
 {{/* Configure the correct name for the memberlist service */}}
@@ -1184,6 +1187,17 @@ gcs:
   bucket_name: {{ $bucketName }}
   service_account: {{ .service_account }}
   {{- end }}
+{{- else if eq .type "cos" }}
+cos:
+  {{- with .cos }}
+  bucket: {{ $bucketName }}
+  app_id: {{ .app_id}}
+  region: {{ .region }}
+  {{- with .access_secret_id }}
+  access_key_id: {{ .access_key_id }}
+  access_key_secret: {{ .access_key_secret }}
+  {{- end}}
+  {{- end }} 
 {{- else if eq .type "azure" }}
 azure:
   {{- with .azure }}

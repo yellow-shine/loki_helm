@@ -82,3 +82,9 @@ update:
 		echo "Updating single binary deployment..."; \
 		helm upgrade loki . -f single-binary-values.yaml --namespace loki $(DEFAULT_ARGS) $(IMAGE_FLAG) $(ARGS); \
 	fi
+
+apply:
+	helm template loki . -f values.yaml -f values-custom.yaml --namespace loki | kubectl apply -f -
+
+delete:
+	helm template loki . -f values.yaml -f values-custom.yaml --namespace loki | kubectl delete -f -
